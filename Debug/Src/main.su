@@ -1,0 +1,4 @@
+/home/khanhtranvan/STM32CubeIDE/workspace_2.1.1/mini_sd_test/Libraries/CMSIS/Include/core_cm3.h:1014:22:NVIC_SetPriority	16	static
+/home/khanhtranvan/STM32CubeIDE/workspace_2.1.1/mini_sd_test/Libraries/CMSIS/Include/core_cm3.h:1139:26:SysTick_Config	16	static
+../Src/main.c:42:6:CNC_Halt_Error	32	static
+../Src/main.c:51:5:main	4208	static

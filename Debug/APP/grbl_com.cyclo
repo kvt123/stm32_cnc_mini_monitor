@@ -1,0 +1,5 @@
+../APP/grbl_com.c:7:6:GRBL_Init	1
+../APP/grbl_com.c:45:6:USART1_IRQHandler	9
+../APP/grbl_com.c:79:6:GRBL_SendChar	2
+../APP/grbl_com.c:85:6:GRBL_SendString	2
+../APP/grbl_com.c:95:9:GRBL_WaitForOK	10

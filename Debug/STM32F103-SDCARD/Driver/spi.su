@@ -1,0 +1,6 @@
+../STM32F103-SDCARD/Driver/spi.c:18:6:initSpi	40	static
+../STM32F103-SDCARD/Driver/spi.c:51:6:SpiSendData	16	static
+../STM32F103-SDCARD/Driver/spi.c:57:9:SpiTransceiveByte	16	static
+../STM32F103-SDCARD/Driver/spi.c:64:9:SpiReceive	8	static
+../STM32F103-SDCARD/Driver/spi.c:70:6:SpiCsLow	4	static
+../STM32F103-SDCARD/Driver/spi.c:75:6:SpiCsHigh	4	static

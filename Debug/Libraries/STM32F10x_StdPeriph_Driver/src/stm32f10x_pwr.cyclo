@@ -1,0 +1,9 @@
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_pwr.c:118:6:PWR_DeInit	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_pwr.c:130:6:PWR_BackupAccessCmd	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_pwr.c:143:6:PWR_PVDCmd	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_pwr.c:164:6:PWR_PVDLevelConfig	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_pwr.c:184:6:PWR_WakeUpPinCmd	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_pwr.c:203:6:PWR_EnterSTOPMode	2
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_pwr.c:242:6:PWR_EnterSTANDBYMode	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_pwr.c:267:12:PWR_GetFlagStatus	2
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_pwr.c:293:6:PWR_ClearFlag	1

@@ -1,0 +1,5 @@
+../APP/grbl_com.c:7:6:GRBL_Init	40	static
+../APP/grbl_com.c:45:6:USART1_IRQHandler	16	static
+../APP/grbl_com.c:79:6:GRBL_SendChar	16	static
+../APP/grbl_com.c:85:6:GRBL_SendString	16	static
+../APP/grbl_com.c:95:9:GRBL_WaitForOK	40	static

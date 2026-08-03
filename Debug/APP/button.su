@@ -1,0 +1,4 @@
+../APP/button.c:3:13:Button_Delay	16	static
+../APP/button.c:7:6:Button_Init	16	static
+../APP/button.c:20:6:Button_Scan_Single	16	static
+../APP/button.c:56:6:Button_Scan_Continuous	16	static

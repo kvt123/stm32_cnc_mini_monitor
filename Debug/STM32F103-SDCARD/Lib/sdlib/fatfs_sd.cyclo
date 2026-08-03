@@ -1,0 +1,17 @@
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:18:13:SELECT	1
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:24:13:DESELECT	1
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:30:13:SPI_TxByte	1
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:36:16:SPI_RxByte	1
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:48:13:SPI_RxBytePtr	1
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:54:16:SD_ReadyWait	3
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:72:13:SD_PowerOn	5
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:115:13:SD_PowerOff	1
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:121:16:SD_CheckPower	1
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:128:13:SD_RxDataBlock	5
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:160:13:SD_TxDataBlock	8
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:211:13:SD_SendCmd	7
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:257:9:SD_disk_initialize	25
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:360:9:SD_disk_status	2
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:369:9:SD_disk_read	11
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:413:9:SD_disk_write	14
+../STM32F103-SDCARD/Lib/sdlib/fatfs_sd.c:468:9:SD_disk_ioctl	25

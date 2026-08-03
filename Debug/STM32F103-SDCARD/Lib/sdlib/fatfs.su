@@ -1,0 +1,2 @@
+../STM32F103-SDCARD/Lib/sdlib/fatfs.c:60:6:MX_FATFS_Init	8	static
+../STM32F103-SDCARD/Lib/sdlib/fatfs.c:75:7:get_fattime	4	static

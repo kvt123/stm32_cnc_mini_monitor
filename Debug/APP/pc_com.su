@@ -1,0 +1,2 @@
+../APP/pc_com.c:4:6:PC_COM_Init	40	static
+../APP/pc_com.c:39:6:PC_COM_ReceiveByte_NonBlocking	8	static

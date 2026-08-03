@@ -1,0 +1,5 @@
+../APP/file_browser.c:14:6:Browser_ScanFiles	4160	static
+../APP/file_browser.c:39:13:Draw_ListItem	40	static
+../APP/file_browser.c:59:6:Browser_DrawUI	40	static
+../APP/file_browser.c:87:6:Browser_ProcessInput	16	static
+../APP/file_browser.c:120:6:Browser_Init	8	static

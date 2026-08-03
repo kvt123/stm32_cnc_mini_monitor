@@ -1,0 +1,5 @@
+../STM32F103-SDCARD/Middleware/FatFs/src/ff_gen_drv.c:68:9:FATFS_LinkDriverEx	2
+../STM32F103-SDCARD/Middleware/FatFs/src/ff_gen_drv.c:97:9:FATFS_LinkDriver	1
+../STM32F103-SDCARD/Middleware/FatFs/src/ff_gen_drv.c:109:9:FATFS_UnLinkDriverEx	3
+../STM32F103-SDCARD/Middleware/FatFs/src/ff_gen_drv.c:135:9:FATFS_UnLinkDriver	1
+../STM32F103-SDCARD/Middleware/FatFs/src/ff_gen_drv.c:145:9:FATFS_GetAttachedDriversNbr	1

@@ -1,0 +1,12 @@
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:104:6:DAC_DeInit	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:123:6:DAC_Init	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:156:6:DAC_StructInit	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:179:6:DAC_Cmd	2
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:239:6:DAC_DMACmd	2
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:266:6:DAC_SoftwareTriggerCmd	2
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:290:6:DAC_DualSoftwareTriggerCmd	2
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:320:6:DAC_WaveGenerationCmd	2
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:348:6:DAC_SetChannel1Data	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:373:6:DAC_SetChannel2Data	1
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:402:6:DAC_SetDualChannelData	2
+../Libraries/STM32F10x_StdPeriph_Driver/src/stm32f10x_dac.c:436:10:DAC_GetDataOutputValue	1

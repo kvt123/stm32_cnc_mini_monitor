@@ -1,0 +1,14 @@
+../STM32F103-SDCARD/BSP/sdcard.c:28:6:clearBuffer	2
+../STM32F103-SDCARD/BSP/sdcard.c:34:6:insertBuffer	1
+../STM32F103-SDCARD/BSP/sdcard.c:39:6:InitSdcard	1
+../STM32F103-SDCARD/BSP/sdcard.c:46:6:_mountSdcard	3
+../STM32F103-SDCARD/BSP/sdcard.c:66:6:_unmountSdcard	3
+../STM32F103-SDCARD/BSP/sdcard.c:86:6:_writeString	1
+../STM32F103-SDCARD/BSP/sdcard.c:91:6:_readString	1
+../STM32F103-SDCARD/BSP/sdcard.c:96:6:_openfile	7
+../STM32F103-SDCARD/BSP/sdcard.c:119:6:_closefile	2
+../STM32F103-SDCARD/BSP/sdcard.c:125:16:getSpaceInfo	3
+../STM32F103-SDCARD/BSP/sdcard.c:142:6:_makeDirectory	2
+../STM32F103-SDCARD/BSP/sdcard.c:152:6:sdcardErrorHandle	1
+../STM32F103-SDCARD/BSP/sdcard.c:158:14:getFileState	2
+../STM32F103-SDCARD/BSP/sdcard.c:174:6:SdcardWriteAction	2

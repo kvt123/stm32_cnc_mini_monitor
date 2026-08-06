@@ -10,4 +10,8 @@
 void PC_COM_Init(uint32_t baudrate);
 char PC_COM_ReceiveByte_NonBlocking(void);
 
+// Bổ sung hàm gửi dữ liệu sang ESP32
+void PC_COM_SendChar(char c);
+void PC_COM_SendString(const char* str);
+
 #endif

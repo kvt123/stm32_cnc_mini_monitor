@@ -29,14 +29,58 @@ A11 - RTS
 B15 - SDA
 B13 - SCL
 VCC - 3.3v
+GND chung
 
 // SD CARD
 
 VCC - 5v
-A6 - MISO
-A7 - MOSI
-A5 - SCK
-A4 - CS
+GND chung
+
+// 74HC157
+
+VCC(3.3v) - pin 16
+GND (chung) - pin 8
+
+// 74HC125
+
+VCC(3.3v) - pin 14
+GND (chung) - pin 7
+PIN2(miso sd input) - PIN5 (miso sd input)
+
+// 74HC157 <-> stm32f103
+
+PIN2 (CS) - A4
+PIN5 (SCK) - A5
+PIN11 (MOSI) - A7
+
+// 74HC157 <-> 74HC125 <-> ESP32 C3
+
+PIN1 (S- select) - PIN1 (1OE) - PIN2 (GPIO2)
+
+// 74HC157 <-> ESP32 C3
+
+PIN3 (1I1) - PIN7(CS)
+PIN6 (2I1) - PIN4 (SCK)
+PIN10 (3I1) - PIN6 (MOSI)
+
+// 74HC157 <-> sd card
+
+PIN4 (1Y) - CS
+PIN7 (2Y) - SCK
+PIN9 (3Y) - MOSI
+
+// 74HC125 <-> ESP32 C3
+
+PIN4 (2OE) - PIN3 (GPIO3)
+
+// 74HC125 <-> stm32f103
+
+PIN3 (OUTPUT) - A6 (MISO)
+
+// 74HC125 <-> SD card
+PIN1 - MISO
+
+
 
 // button
 

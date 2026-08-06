@@ -13,13 +13,11 @@
 #include "grbl_com.h"
 #include <stdio.h>
 #include <string.h>
+#include "ff.h" // Thư viện FatFs để dùng lệnh ngắt thẻ nhớ f_mount()
 
-#define USE_INPUT_PC_COM    0
 #define USE_INPUT_BUTTON    1
 
-#if USE_INPUT_PC_COM == 1
 #include "pc_com.h"
-#endif
 
 #if USE_INPUT_BUTTON == 1
 #include "button.h"
@@ -29,7 +27,8 @@ typedef enum {
     STATE_HOMING,        
     STATE_SELECT_FILE,   
     STATE_JOGGING,       
-    STATE_STREAMING      
+    STATE_STREAMING,
+    STATE_WIFI_SYNC      // <-- TRẠNG THÁI MỚI: Khóa máy để ESP32 copy file
 } CNC_State_t;
 
 CNC_State_t cnc_state = STATE_SELECT_FILE; 
@@ -38,7 +37,6 @@ CNC_State_t cnc_state = STATE_SELECT_FILE;
 char line_buffer[GCODE_LINE_BUFFER_SIZE];
 static char prev_jog_key = 0; 
 
-// Hàm dùng chung để khóa máy khi bị lỗi (Căn chỉnh cho 240x320)
 void CNC_Halt_Error(const char* msg)
 {
     ST7789_Fill_Color(RED);
@@ -52,9 +50,7 @@ int main(void)
 {
   if (SysTick_Config(SystemCoreClock / 1000)) { while (1); }
 
-  #if USE_INPUT_PC_COM == 1
-  PC_COM_Init(115200);
-  #endif
+  PC_COM_Init(115200); // Khởi tạo UART2 (Kết nối ESP32)
 
   #if USE_INPUT_BUTTON == 1
   Button_Init();
@@ -65,26 +61,72 @@ int main(void)
   InitSdcard();
   Browser_Init();
 
+  // Biến lưu trữ chuỗi lệnh từ ESP32
+  static char esp_buf[32];
+  static uint8_t esp_idx = 0;
+
   while (1)
   {
+    // 1. LẮNG NGHE LỆNH TỪ ESP32 QUA UART2
+    char uart_char = PC_COM_ReceiveByte_NonBlocking();
+    if (uart_char != 0)
+    {
+        if (uart_char == '\n' || uart_char == '\r')
+        {
+            esp_buf[esp_idx] = '\0';
+
+            if (strcmp(esp_buf, "WIFI_REQ") == 0) 
+            {
+                f_mount(NULL, "", 0); 
+                
+                PC_COM_SendString("WIFI_ACK\n");
+                
+                ST7789_Fill_Color(YELLOW);
+                ST7789_WriteString(15, 120, "DANG DONG BO WIFI", Font_16x26, BLACK, YELLOW);
+                ST7789_WriteString(20, 170, "Vui long khong tat may", Font_11x18, BLACK, YELLOW);
+                
+                cnc_state = STATE_WIFI_SYNC;
+            }
+            else if (strcmp(esp_buf, "WIFI_REL") == 0) 
+            {
+                if (cnc_state == STATE_WIFI_SYNC) 
+                {
+                  // <-- THAY ĐỔI TẠI ĐÂY -->
+                  // Chờ 1 chút để mạch MUX gạt phần cứng ổn định
+                  for(volatile uint32_t i = 0; i < 2000000; i++); 
+                  
+                  // RESET NÓNG HỆ THỐNG
+                  // STM32 sẽ khởi động lại từ đầu, đảm bảo FatFs và SPI sạch 100%
+                  NVIC_SystemReset(); 
+                }
+            }
+            esp_idx = 0; 
+        } 
+        else 
+        {
+            if (esp_idx < 30) esp_buf[esp_idx++] = uart_char;
+        }
+    }
+
+      // 2. LẮNG NGHE NÚT BẤM VẬT LÝ
       char key = 0;
-
-      #if USE_INPUT_PC_COM == 1
-      key = PC_COM_ReceiveByte_NonBlocking();
-      #endif
-
       #if USE_INPUT_BUTTON == 1
-      if (key == 0) {
-          if (cnc_state == STATE_JOGGING) {
-              key = Button_Scan_Continuous(); 
-          } else {
-              key = Button_Scan_Single();     
-          }
+      if (cnc_state == STATE_JOGGING) {
+          key = Button_Scan_Continuous(); 
+      } else {
+          key = Button_Scan_Single();     
       }
       #endif
 
+      // 3. XỬ LÝ GIAO DIỆN & MÁY CNC
       switch (cnc_state)
       {
+          case STATE_WIFI_SYNC:
+          {
+              // Không làm gì cả, khóa mọi thao tác nút bấm, chờ ESP32 gửi lệnh WIFI_REL
+              break;
+          }
+
           case STATE_HOMING:
           {
               ST7789_Fill_Color(BLACK);
@@ -109,7 +151,6 @@ int main(void)
               {
                   flag_file_selected = 0; 
                   
-                  // -- Căn chỉnh lại Menu Jogging cho màn 240x320 --
                   ST7789_Fill_Color(BLACK);
                   ST7789_WriteString(10, 30, "FILE DA CHON:", Font_11x18, WHITE, BLACK);
                   ST7789_WriteString(10, 55, selected_gcode_file, Font_16x26, GREEN, BLACK);
@@ -119,7 +160,6 @@ int main(void)
                   ST7789_WriteString(20, 165, "A/D: Truc X", Font_11x18, WHITE, BLACK);
                   ST7789_WriteString(20, 190, "I/K: Truc Z", Font_11x18, WHITE, BLACK);
 
-                  // Vẽ một nút ấn giả lập để nhấn mạnh phím chốt tọa độ
                   ST7789_DrawFilledRectangle(0, 250, ST7789_WIDTH, 30, RED);
                   ST7789_WriteString(20, 256, "An 'E' de CHOT GOC", Font_11x18, WHITE, RED);
 
@@ -177,19 +217,13 @@ int main(void)
                   uint8_t last_percent = 255; 
                   char prog_str[20];
 
-                  // -- Căn chỉnh lại Menu Đang chạy (Streaming) cho 240x320 --
                   ST7789_Fill_Color(BLUE);
                   ST7789_WriteString(16, 50, "DANG CHAY MAY", Font_16x26, WHITE, BLUE);
-                  
-                  // In tên file bôi chữ Vàng để làm nổi bật
                   ST7789_WriteString(40, 90, selected_gcode_file, Font_11x18, YELLOW, BLUE);
-                  
-                  // Vẽ viền thanh Progress Bar (Rộng 200px, chừa viền 20px mỗi bên)
                   ST7789_DrawRectangle(19, 139, 220, 161, WHITE); 
 
                   while (f_gets(line_buffer, GCODE_LINE_BUFFER_SIZE, &fil) != NULL)
                   {
-                      // Bổ sung ký tự \n nếu dòng Gcode bị khuyết
                       int len = strlen(line_buffer);
                       if (len > 0 && line_buffer[len-1] != '\n' && line_buffer[len-1] != '\r') 
                       {
@@ -210,12 +244,9 @@ int main(void)
                       if (percent != last_percent) 
                       {
                           last_percent = percent;
-                          
-                          // Dòng chữ % tiến độ
                           sprintf(prog_str, "Tien do: %3d %%", percent);
                           ST7789_WriteString(45, 185, prog_str, Font_11x18, YELLOW, BLUE);
 
-                          // Ruột thanh chạy tiến độ (2px tương đương 1%)
                           uint16_t bar_width = percent * 2; 
                           if (bar_width > 0) {
                               ST7789_DrawFilledRectangle(20, 140, bar_width, 20, GREEN);
@@ -225,7 +256,6 @@ int main(void)
                   f_close(&fil);
               }
 
-              // Màn hình xanh báo hoàn thành nằm chính giữa
               ST7789_Fill_Color(GREEN);
               ST7789_WriteString(32, 140, "HOAN THANH!", Font_16x26, BLACK, GREEN);
               for(volatile uint32_t i = 0; i < 20000000; i++); 

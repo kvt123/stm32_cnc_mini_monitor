@@ -71,6 +71,7 @@ void USART1_IRQHandler(void)
     
     if (USART_GetFlagStatus(USART1, USART_FLAG_ORE) != RESET)
     {
+        while (1);
         USART_ReceiveData(USART1);
     }
 }

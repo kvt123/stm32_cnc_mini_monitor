@@ -169,24 +169,12 @@ void handleTakeControl() {
     while(Serial1.available()) Serial1.read(); 
     Serial1.print("WIFI_REQ\n");
     
-    unsigned long startTime = millis();
-    bool ack_received = false;
-    String response = "";
-    
-    while (millis() - startTime < 3000) {
-        if (Serial1.available()) {
-            char c = (char)Serial1.read();
-            response += c;
-            if (response.indexOf("WIFI_ACK") != -1 || response.indexOf("WIFI_REQ") != -1) {
-                ack_received = true;
-                break;
-            }
-        }
-    }
+    // 3. Đợi phản hồi bằng hàm chuẩn (Timeout 3 giây)
+    Serial1.setTimeout(3000);
+    String response = Serial1.readStringUntil('\n');
 
-    if (ack_received) {
-        digitalWrite(MUX_CTRL_1, HIGH); 
-        digitalWrite(MUX_CTRL_2, LOW);
+    if (response.indexOf("WIFI_ACK") != -1) {
+        // LÚC NÀY STM32 ĐÃ GẠT MUX XONG XUÔI, ESP32 CHỈ VIỆC DÙNG
         delay(100); 
         
         SD.end();
@@ -200,6 +188,7 @@ void handleTakeControl() {
             server.send(200, "text/plain", "SD_ERROR");
         }
     } else {
+        Serial.println("[LỖI] STM32 Không gửi WIFI_ACK. Phản hồi nhận được: " + response);
         server.send(200, "text/plain", "TIMEOUT");
     }
 }
@@ -208,12 +197,26 @@ void handleReleaseControl() {
     if (is_sd_controlled_by_wifi) {
         SD.end(); 
         SPI.end(); 
-        digitalWrite(MUX_CTRL_1, LOW); 
-        digitalWrite(MUX_CTRL_2, HIGH); 
+        
+        
+        // --- THÊM LOGIC CHỜ PHẢN HỒI (HANDSHAKE) ---
+        while(Serial1.available()) Serial1.read();
         Serial1.print("WIFI_REL\n");
+        
+        Serial1.setTimeout(3000);
+        String response = Serial1.readStringUntil('\n');
+        
         is_sd_controlled_by_wifi = false;
+        
+        if (response.indexOf("WIFI_REL_ACK") != -1) {
+            server.send(200, "text/plain", "OK");
+        } else {
+            Serial.println("[CẢNH BÁO] STM32 Không gửi WIFI_REL_ACK.");
+            server.send(200, "text/plain", "NO_ACK"); // Báo lỗi nhẹ cho Web
+        }
+    } else {
+        server.send(200, "text/plain", "OK"); // Đã nhả từ trước
     }
-    server.send(200, "text/plain", "OK");
 }
 
 // =======================================================================
@@ -284,20 +287,6 @@ void handleFileList() {
 }
 // =======================================================================
 
-void handleRefreshSD() {
-    if (!is_sd_controlled_by_wifi) { server.send(500, "text/plain", "Chua ket noi SD!"); return; }
-    
-    SD.end();
-    SPI.end();
-    delay(200);
-    
-    SPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
-    if (SD.begin(SD_CS, SPI, 4000000)) { 
-        handleFileList(); 
-    } else {
-        server.send(500, "text/plain", "Loi: Khong the khoi dong lai the nho!");
-    }
-}
 
 void handleDelete() {
     if (!is_sd_controlled_by_wifi) return;
@@ -345,10 +334,7 @@ void setup() {
     
     Serial.println("\n--- KHOI DONG ESP32-C3 ---");
 
-    pinMode(MUX_CTRL_1, OUTPUT);
-    pinMode(MUX_CTRL_2, OUTPUT);
-    digitalWrite(MUX_CTRL_1, LOW); 
-    digitalWrite(MUX_CTRL_2, HIGH);  
+
     is_sd_controlled_by_wifi = false;
 
     WiFi.disconnect(true, true); 
@@ -366,7 +352,6 @@ void setup() {
         server.on("/release", HTTP_GET, handleReleaseControl);
         
         server.on("/list", HTTP_GET, handleFileList);
-        server.on("/refresh_sd", HTTP_GET, handleRefreshSD); 
         
         server.on("/delete", HTTP_DELETE, handleDelete);
         

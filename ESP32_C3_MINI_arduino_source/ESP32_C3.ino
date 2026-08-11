@@ -26,7 +26,7 @@ File uploadFile;
 
 bool is_sd_controlled_by_wifi = false; 
 
-// --- GIAO DIỆN HTML ---
+// --- GIAO DIỆN HTML ĐÃ THÊM TÍNH NĂNG KHÓA NÚT CHỐNG DOUBLE-CLICK ---
 const char* htmlHomePage = R"rawliteral(
 <!DOCTYPE html>
 <html lang="vi">
@@ -45,6 +45,8 @@ const char* htmlHomePage = R"rawliteral(
         .btn-orange { background-color: #fd7e14; } .btn-orange:hover { background-color: #e86e10; }
         .btn-refresh { background-color: #28a745; margin-bottom: 10px; font-size: 14px;} .btn-refresh:hover { background-color: #218838; }
         .btn-delete { background-color: #dc3545; padding: 5px 10px; font-size: 12px; }
+        /* Thêm style cho nút bị vô hiệu hóa */
+        button:disabled { background-color: #cccccc !important; color: #666666 !important; cursor: not-allowed; }
         ul { list-style-type: none; padding: 0; text-align: left; max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; }
         li { background: #eee; margin: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd;}
         #fileManager { display: none; margin-top: 20px; border-top: 2px solid #ddd; padding-top: 20px;}
@@ -100,19 +102,46 @@ const char* htmlHomePage = R"rawliteral(
             });
         }
 
+        // ĐÃ KHÓA NÚT CHỐNG SPAM
         function takeControl() {
+            let btn = document.getElementById('btnTake');
+            btn.innerHTML = "⏳ Đang kết nối...";
+            btn.disabled = true;
             document.getElementById('statusBox').innerHTML = "⏳ Đang xin quyền từ CNC...";
+            
             fetch('/take').then(res => res.text()).then(res => {
+                btn.innerHTML = "📲 Kết nối Thẻ SD vào Wi-Fi";
+                btn.disabled = false;
                 if(res === "OK") {
                     isListLoaded = false;
                     checkStatus();
                 }
                 else { alert("Lỗi: Màn hình CNC không phản hồi!"); checkStatus(); }
+            }).catch(err => {
+                btn.innerHTML = "📲 Kết nối Thẻ SD vào Wi-Fi";
+                btn.disabled = false;
+                alert("Lỗi Mạng: Không thể kết nối với ESP32!");
+                checkStatus();
             });
         }
 
+        // ĐÃ KHÓA NÚT CHỐNG SPAM
         function releaseControl() {
-            fetch('/release').then(() => checkStatus());
+            let btn = document.getElementById('btnRelease');
+            btn.innerHTML = "⏳ Đang trả thẻ...";
+            btn.disabled = true;
+            document.getElementById('statusBox').innerHTML = "⏳ Đang nhả quyền cho CNC...";
+            
+            fetch('/release').then(res => res.text()).then(res => {
+                btn.innerHTML = "🖥️ Trả Thẻ SD cho CNC";
+                btn.disabled = false;
+                checkStatus();
+            }).catch(err => {
+                btn.innerHTML = "🖥️ Trả Thẻ SD cho CNC";
+                btn.disabled = false;
+                alert("Lỗi Mạng: Không thể kết nối với ESP32!");
+                checkStatus();
+            });
         }
 
         function loadFiles(deepScan = false) {
@@ -169,7 +198,7 @@ void handleTakeControl() {
     while(Serial1.available()) Serial1.read(); 
     Serial1.print("WIFI_REQ\n");
     
-    // 3. Đợi phản hồi bằng hàm chuẩn (Timeout 3 giây)
+    // Đợi phản hồi bằng hàm chuẩn (Timeout 3 giây)
     Serial1.setTimeout(3000);
     String response = Serial1.readStringUntil('\n');
 
@@ -198,8 +227,7 @@ void handleReleaseControl() {
         SD.end(); 
         SPI.end(); 
         
-        
-        // --- THÊM LOGIC CHỜ PHẢN HỒI (HANDSHAKE) ---
+        // --- LOGIC CHỜ PHẢN HỒI TỪ STM32 (HANDSHAKE) ---
         while(Serial1.available()) Serial1.read();
         Serial1.print("WIFI_REL\n");
         
@@ -209,13 +237,14 @@ void handleReleaseControl() {
         is_sd_controlled_by_wifi = false;
         
         if (response.indexOf("WIFI_REL_ACK") != -1) {
+            delay(5000);
             server.send(200, "text/plain", "OK");
         } else {
             Serial.println("[CẢNH BÁO] STM32 Không gửi WIFI_REL_ACK.");
-            server.send(200, "text/plain", "NO_ACK"); // Báo lỗi nhẹ cho Web
+            server.send(200, "text/plain", "NO_ACK"); 
         }
     } else {
-        server.send(200, "text/plain", "OK"); // Đã nhả từ trước
+        server.send(200, "text/plain", "OK"); 
     }
 }
 

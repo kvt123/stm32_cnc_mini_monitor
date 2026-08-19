@@ -2,6 +2,7 @@
 
 volatile uint8_t grbl_ok_received = 0;
 volatile uint8_t grbl_error_received = 0; // <-- Cờ báo lỗi/Alarm
+volatile uint8_t is_uart_noise_error = 0; // Cờ báo động toàn cục
 
 // --- KHỞI TẠO UART1 CÓ SỬ DỤNG NGẮT ---
 void GRBL_Init(uint32_t baudrate)
@@ -45,8 +46,22 @@ void GRBL_Init(uint32_t baudrate)
 void USART1_IRQHandler(void)
 {
     static char prev_char = 0;
-    
-    if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
+
+    // 1. KIỂM TRA CÁC LỖI NHIỄU PHẦN CỨNG (EMI)
+    if(USART_GetFlagStatus(USART1, USART_FLAG_ORE) != RESET || // Lỗi tràn cống (Overrun)
+       USART_GetFlagStatus(USART1, USART_FLAG_NE) != RESET  || // Lỗi nhiễu gai điện (Noise)
+       USART_GetFlagStatus(USART1, USART_FLAG_FE) != RESET)    // Lỗi sai khung truyền (Framing)
+    {
+        // Phải đọc thanh ghi SR rồi đọc thanh ghi DR để xóa các cờ lỗi này
+        // Nếu không đọc, MCU sẽ bị treo ngắt vĩnh viễn
+        volatile uint32_t tmpreg = USART1->SR;
+        tmpreg = USART1->DR; 
+        (void)tmpreg; // Ép trình biên dịch không báo warning biến không dùng tới
+
+        // KÍCH HOẠT BÁO ĐỘNG ĐỎ!
+        is_uart_noise_error = 1; 
+    }
+    else if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
         char curr_char = (char)USART_ReceiveData(USART1);
         
@@ -69,11 +84,6 @@ void USART1_IRQHandler(void)
         prev_char = curr_char;
     }
     
-    if (USART_GetFlagStatus(USART1, USART_FLAG_ORE) != RESET)
-    {
-        while (1);
-        USART_ReceiveData(USART1);
-    }
 }
 
 

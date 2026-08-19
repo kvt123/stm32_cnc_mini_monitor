@@ -26,7 +26,7 @@ File uploadFile;
 
 bool is_sd_controlled_by_wifi = false; 
 
-// --- GIAO DIỆN HTML ---
+// --- GIAO DIỆN HTML ĐÃ THÊM TÍNH NĂNG KHÓA NÚT CHỐNG DOUBLE-CLICK ---
 const char* htmlHomePage = R"rawliteral(
 <!DOCTYPE html>
 <html lang="vi">
@@ -45,6 +45,8 @@ const char* htmlHomePage = R"rawliteral(
         .btn-orange { background-color: #fd7e14; } .btn-orange:hover { background-color: #e86e10; }
         .btn-refresh { background-color: #28a745; margin-bottom: 10px; font-size: 14px;} .btn-refresh:hover { background-color: #218838; }
         .btn-delete { background-color: #dc3545; padding: 5px 10px; font-size: 12px; }
+        /* Thêm style cho nút bị vô hiệu hóa */
+        button:disabled { background-color: #cccccc !important; color: #666666 !important; cursor: not-allowed; }
         ul { list-style-type: none; padding: 0; text-align: left; max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; }
         li { background: #eee; margin: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd;}
         #fileManager { display: none; margin-top: 20px; border-top: 2px solid #ddd; padding-top: 20px;}
@@ -100,19 +102,46 @@ const char* htmlHomePage = R"rawliteral(
             });
         }
 
+        // ĐÃ KHÓA NÚT CHỐNG SPAM
         function takeControl() {
+            let btn = document.getElementById('btnTake');
+            btn.innerHTML = "⏳ Đang kết nối...";
+            btn.disabled = true;
             document.getElementById('statusBox').innerHTML = "⏳ Đang xin quyền từ CNC...";
+            
             fetch('/take').then(res => res.text()).then(res => {
+                btn.innerHTML = "📲 Kết nối Thẻ SD vào Wi-Fi";
+                btn.disabled = false;
                 if(res === "OK") {
                     isListLoaded = false;
                     checkStatus();
                 }
                 else { alert("Lỗi: Màn hình CNC không phản hồi!"); checkStatus(); }
+            }).catch(err => {
+                btn.innerHTML = "📲 Kết nối Thẻ SD vào Wi-Fi";
+                btn.disabled = false;
+                alert("Lỗi Mạng: Không thể kết nối với ESP32!");
+                checkStatus();
             });
         }
 
+        // ĐÃ KHÓA NÚT CHỐNG SPAM
         function releaseControl() {
-            fetch('/release').then(() => checkStatus());
+            let btn = document.getElementById('btnRelease');
+            btn.innerHTML = "⏳ Đang trả thẻ...";
+            btn.disabled = true;
+            document.getElementById('statusBox').innerHTML = "⏳ Đang nhả quyền cho CNC...";
+            
+            fetch('/release').then(res => res.text()).then(res => {
+                btn.innerHTML = "🖥️ Trả Thẻ SD cho CNC";
+                btn.disabled = false;
+                checkStatus();
+            }).catch(err => {
+                btn.innerHTML = "🖥️ Trả Thẻ SD cho CNC";
+                btn.disabled = false;
+                alert("Lỗi Mạng: Không thể kết nối với ESP32!");
+                checkStatus();
+            });
         }
 
         function loadFiles(deepScan = false) {
@@ -169,24 +198,12 @@ void handleTakeControl() {
     while(Serial1.available()) Serial1.read(); 
     Serial1.print("WIFI_REQ\n");
     
-    unsigned long startTime = millis();
-    bool ack_received = false;
-    String response = "";
-    
-    while (millis() - startTime < 3000) {
-        if (Serial1.available()) {
-            char c = (char)Serial1.read();
-            response += c;
-            if (response.indexOf("WIFI_ACK") != -1 || response.indexOf("WIFI_REQ") != -1) {
-                ack_received = true;
-                break;
-            }
-        }
-    }
+    // Đợi phản hồi bằng hàm chuẩn (Timeout 3 giây)
+    Serial1.setTimeout(3000);
+    String response = Serial1.readStringUntil('\n');
 
-    if (ack_received) {
-        digitalWrite(MUX_CTRL_1, HIGH); 
-        digitalWrite(MUX_CTRL_2, LOW);
+    if (response.indexOf("WIFI_ACK") != -1) {
+        // LÚC NÀY STM32 ĐÃ GẠT MUX XONG XUÔI, ESP32 CHỈ VIỆC DÙNG
         delay(100); 
         
         SD.end();
@@ -200,6 +217,7 @@ void handleTakeControl() {
             server.send(200, "text/plain", "SD_ERROR");
         }
     } else {
+        Serial.println("[LỖI] STM32 Không gửi WIFI_ACK. Phản hồi nhận được: " + response);
         server.send(200, "text/plain", "TIMEOUT");
     }
 }
@@ -208,12 +226,26 @@ void handleReleaseControl() {
     if (is_sd_controlled_by_wifi) {
         SD.end(); 
         SPI.end(); 
-        digitalWrite(MUX_CTRL_1, LOW); 
-        digitalWrite(MUX_CTRL_2, HIGH); 
+        
+        // --- LOGIC CHỜ PHẢN HỒI TỪ STM32 (HANDSHAKE) ---
+        while(Serial1.available()) Serial1.read();
         Serial1.print("WIFI_REL\n");
+        
+        Serial1.setTimeout(3000);
+        String response = Serial1.readStringUntil('\n');
+        
         is_sd_controlled_by_wifi = false;
+        
+        if (response.indexOf("WIFI_REL_ACK") != -1) {
+            delay(5000);
+            server.send(200, "text/plain", "OK");
+        } else {
+            Serial.println("[CẢNH BÁO] STM32 Không gửi WIFI_REL_ACK.");
+            server.send(200, "text/plain", "NO_ACK"); 
+        }
+    } else {
+        server.send(200, "text/plain", "OK"); 
     }
-    server.send(200, "text/plain", "OK");
 }
 
 // =======================================================================
@@ -284,20 +316,6 @@ void handleFileList() {
 }
 // =======================================================================
 
-void handleRefreshSD() {
-    if (!is_sd_controlled_by_wifi) { server.send(500, "text/plain", "Chua ket noi SD!"); return; }
-    
-    SD.end();
-    SPI.end();
-    delay(200);
-    
-    SPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
-    if (SD.begin(SD_CS, SPI, 4000000)) { 
-        handleFileList(); 
-    } else {
-        server.send(500, "text/plain", "Loi: Khong the khoi dong lai the nho!");
-    }
-}
 
 void handleDelete() {
     if (!is_sd_controlled_by_wifi) return;
@@ -339,16 +357,14 @@ void handleFileUpload() {
 }
 
 void setup() {
+    delay(6000);
     Serial.begin(115200);      
     Serial1.begin(115200, SERIAL_8N1, STM_RX_PIN, STM_TX_PIN); 
     delay(1000);
     
     Serial.println("\n--- KHOI DONG ESP32-C3 ---");
 
-    pinMode(MUX_CTRL_1, OUTPUT);
-    pinMode(MUX_CTRL_2, OUTPUT);
-    digitalWrite(MUX_CTRL_1, LOW); 
-    digitalWrite(MUX_CTRL_2, HIGH);  
+
     is_sd_controlled_by_wifi = false;
 
     WiFi.disconnect(true, true); 
@@ -366,7 +382,6 @@ void setup() {
         server.on("/release", HTTP_GET, handleReleaseControl);
         
         server.on("/list", HTTP_GET, handleFileList);
-        server.on("/refresh_sd", HTTP_GET, handleRefreshSD); 
         
         server.on("/delete", HTTP_DELETE, handleDelete);
         

@@ -36,12 +36,12 @@ GND chung
 VCC - 5v
 GND chung
 
-// 74HC157
+// 74HC157 (16 chaan)
 
 VCC(3.3v) - pin 16
 GND (chung) - pin 8
 
-// 74HC125
+// 74HC125 (14 chaan)
 
 VCC(3.3v) - pin 14
 GND (chung) - pin 7
@@ -94,3 +94,4 @@ BTN_X_PLUS_PIN      GPIO_Pin_8   // Nút Phải / X+ ('d')
 BTN_Z_PLUS_PIN      GPIO_Pin_9   // Nút Z Lên ('i')
 BTN_Z_MINUS_PIN     GPIO_Pin_10  // Nút Z Xuống ('k')
 BTN_ENTER_PIN       GPIO_Pin_11 
+

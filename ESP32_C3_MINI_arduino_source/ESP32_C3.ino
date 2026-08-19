@@ -357,6 +357,7 @@ void handleFileUpload() {
 }
 
 void setup() {
+    delay(6000);
     Serial.begin(115200);      
     Serial1.begin(115200, SERIAL_8N1, STM_RX_PIN, STM_TX_PIN); 
     delay(1000);
